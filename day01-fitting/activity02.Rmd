@@ -44,7 +44,8 @@ If you would like to try the *ISLR* labs using these two packages instead of bas
 - Run the `setup` code chunk and/or **knit** <img src="../README-img/knit-icon.png" alt="knit" width = "20"/> icon your Rmd document to verify that no errors occur.
 
 ```{r setup}
-
+  library(tidyverse)
+  library(tidymodels)
 ```
 
 ![check-in](../README-img/noun-magnifying-glass.png) **Check in**
@@ -61,10 +62,29 @@ In the R code chunk below titled `load-data`, you will type the code that reads 
 - Rather than downloading this file, uploading to RStudio, then reading it in, explore how to load this file directly from the provided URL with `readr::read_csv` (`{readr}` is part of `{tidyverse}`).
 - Assign this data set into a data frame named `hfi` (short for "Human Freedom Index").
 
+```{r}
+hfi <- readr::read_csv("hfi.csv")
+```
+
 After doing this and viewing the loaded data, answer the following questions:
 
 1. What are the dimensions of the dataset?
   What does each row represent?
+  
+```{r}
+
+# Check dimensions of the dataset
+dimensions <- dim(hfi)
+print(dimensions)
+
+# Inspect the structure of the dataset
+str(hfi)
+
+# View the first few rows of the dataset
+head(hfi)
+
+```
+
 
 The dataset spans a lot of years.
 We are only interested in data from year 2016.
@@ -74,6 +94,11 @@ In the R code chunk below titled `hfi-2016`, type the code that does the followi
 - Assigns the result to a data frame named `hfi_2016`.
 
 ```{r hfi-2016}
+library(dplyr)
+
+# Filter the data for year 2016
+hfi_2016 <- hfi %>%
+  filter(year == 2016)
 
 ```
 
@@ -98,6 +123,23 @@ Answer the following questions (use your markdown skills) and complete the follo
 - In the R code chunk below titled `univariable-plots`, type the R code that displays this plot for `pf_expression_control`.
 
 ```{r distribution-plots}
+# univariable-plots
+
+library(ggplot2)
+
+# Plot for pf_score
+ggplot(hfi_2016, aes(x = pf_score)) +
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
+  labs(title = "Distribution of pf_score in 2016",
+       x = "pf_score",
+       y = "Frequency")
+
+# Plot for pf_expression_control
+ggplot(hfi_2016, aes(x = pf_expression_control)) +
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
+  labs(title = "Distribution of pf_expression_control in 2016",
+       x = "pf_expression_control",
+       y = "Frequency")
 
 ```
 
@@ -113,6 +155,15 @@ Answer the following questions (use your markdown skills) and complete the follo
 - In the R code chunk below titled `relationship-plot`, plot this relationship using the variable `pf_expression_control` as the predictor/explanatory variable.
 
 ```{r relationship-plot}
+
+library(ggplot2)
+
+# Scatter plot for the relationship between pf_expression_control and pf_score
+ggplot(hfi_2016, aes(x = pf_expression_control, y = pf_score)) +
+  geom_point(color = "blue") +
+  labs(title = "Relationship between pf_expression_control and pf_score",
+       x = "pf_expression_control",
+       y = "pf_score")
 
 ```
 
@@ -130,6 +181,11 @@ What numerical summary would you use to describe the relationship between two nu
 (hint: explore the `cor` function from Base R)
 
 ```{r challenge}
+# Compute the correlation coefficient between pf_expression_control and pf_score
+correlation <- cor(hfi_2016$pf_expression_control, hfi_2016$pf_score)
+
+# Print the correlation coefficient
+print(correlation)
 
 ```
 
@@ -144,7 +200,7 @@ To begin, we will create a `{parsnip}` specification for a linear model.
 
 - In the code chunk below titled `parsnip-spec`, replace "verbatim" with "r" just before the code chunk title.
 
-```{verbatim parsnip-spec}
+```{r parsnip-spec}
 lm_spec <- linear_reg() %>%
   set_mode("regression") %>%
   set_engine("lm")
@@ -166,7 +222,7 @@ Look at your knitted document to see how this syntax appears.
 
 - In the code chunk below titled `fit-lm`, replace "verbatim" with "r" just before the code chunk title. 
 
-```{verbatim fit-lm}
+```{r fit-lm}
 slr_mod <- lm_spec %>% 
   fit(pf_score ~ pf_expression_control, data = hfi_2016)
 
@@ -201,7 +257,7 @@ We use `glance` from  `{broom}` (which is automatically loaded with `{tidymodels
 
 - In the code chunk below titled `glance-lm`, replace "verbatim" with "r" just before the code chunk title. 
 
-```{verbatim glance-mod}
+```{r glance-mod}
 glance(slr_mod)
 ```
 
@@ -209,7 +265,7 @@ After doing this and running the code, answer the following questions:
 
 7. What is the value of $R^2$ for this model?
 
-
+0.714
 
 8. What does this value mean in the context of this model?
   Think about what would a "good" value of $R^2$ would be?
@@ -230,13 +286,27 @@ Using the `diamonds` example provided to you in the Day 2 `README`, do the follo
 - Create an initial 80-20 split of the `hfi_2016` dataset
 - Using your initial split R object, assign the two splits into a training R object and a testing R object.
 
+```{r}
+# set seed before random split
+set.seed(1)
+
+# put 80% of the data into the training set
+hfi_split <- initial_split(hfi_2016, prop = 0.80)
+
+# assign the two splits to data frames - with descriptive names
+hfi_train <- training(hfi_split)
+hfi_test <- testing(hfi_split)
+
+```
+
+
 Now, you will use your training dataset to fit a SLR model.
 
 - In the code chunk below titled `train-fit-lm`, replace "verbatim" with "r" just before the code chunk title and update the data set to your training R object you just created.
 
-```{verbatim train-fit-lm}
+```{r train-fit-lm}
 slr_train <- lm_spec %>% 
-  fit(pf_score ~ pf_expression_control, data = hfi_2016)
+  fit(pf_score ~ pf_expression_control, data = hfi_train)
 
 tidy(slr_train)
 ```
@@ -246,7 +316,7 @@ Notice that you can reuse the `lm_spec` specification because we are still doing
 9. Using the `tidy` output, update the below formula with the estimated parameters.
   That is, replace "intercept" and "slope" with the appropriate values
 
-$\hat{\texttt{pf\score}} = intercept + slope \times \texttt{pf\_expression\_control}$
+$\hat{\texttt{pf\score}} = 4.17 + 0.568 \times \texttt{pf\_expression\_control}$
 
 
 10. Interpret each of the estimated parameters from (10) in the context of this research question.
@@ -257,8 +327,8 @@ Now we will assess using the testing data set.
 
 - In the code chunk below titled `train-fit-lm`, replace "verbatim" with "r" just before the code chunk title and update `data_test` to whatever R object you assigned your testing data to above.
   
-```{verbatim glance-test}
-test_aug <- augment(slr_train, new_data = data_test)
+```{r glance-test}
+test_aug <- augment(slr_train, new_data = hfi_test)
 test_aug
 ```
 
@@ -288,8 +358,8 @@ We can use `broom::augment` to calculate these.
 
 - In the code chunk below titled `augment`, replace "verbatim" with "r" just before the code chunk title and update `data_test` to whatever R object you assigned your testing data to above. 
   
-```{verbatim augment}
-train_aug <- augment(slr_train)
+```{r augment}
+train_aug <- augment(slr_train, hfi_test)
 
 train_aug
 ```
@@ -300,7 +370,7 @@ We should also verify this condition with a plot of the residuals vs. fitted (pr
 
 - In the code chunk below titled `fitted-residual`, replace "verbatim" with "r" just before the code chunk title. 
   
-```{verbatim fitted-residual}
+```{r fitted-residual}
 ggplot(data = train_aug, aes(x = .fitted, y = .resid)) +
   geom_point() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
@@ -321,7 +391,7 @@ Answer the following question:
 
 - In the code chunk below titled `residual-histogram`, replace "verbatim" with "r" just before the code chunk title. 
  
-```{verbatim fitted-residual}
+```{verbatim fitted-residual1}
 ggplot(data = train_aug, aes(x = .resid)) +
   geom_histogram(binwidth = 0.25) +
   xlab("Residuals")
